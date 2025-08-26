@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block title %}{{ poll.question }} - Poll System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <!-- Poll Header -->
+    <div class="dashboard-card text-center mb-4">
+      <h1 class="display-6 mb-3">{{ poll.question }}</h1>
+      
+      <!-- Poll Status -->
+      <div class="mb-3">
+        {% if expired %}
+          <span class="status-badge status-expired fs-6">
+            <i class="bi bi-clock-history me-2"></i>Poll Has Expired
+          </span>
+        {% elif not poll.active %}
+          <span class="status-badge status-inactive fs-6">
+            <i class="bi bi-pause-circle me-2"></i>Poll Is Inactive
+          </span>
+        {% elif already_voted %}
+          <span class="status-badge status-active fs-6">
+            <i class="bi bi-check-circle me-2"></i>You Have Already Voted
+          </span>
+        {% else %}
+          <span class="status-badge status-active fs-6">
+            <i class="bi bi-play-circle me-2"></i>Active Poll - Vote Now!
+          </span>
+        {% endif %}
+      </div>
+      
+      <!-- Poll Info -->
+      <div class="row text-muted small">
+        <div class="col-md-6">
+          <i class="bi bi-calendar3 me-1"></i>
+          Created: {{ poll.created_at.strftime('%b %d, %Y at %I:%M %p') }}
+        </div>
+        {% if poll.expiry %}
+        <div class="col-md-6">
+          <i class="bi bi-alarm me-1"></i>
+          Expires: {{ poll.expiry.strftime('%b %d, %Y at %I:%M %p') }}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Poll Content -->
+    {% if expired %}
+      <div class="card poll-card">
+        <div class="card-body text-center py-5">
+          <i class="bi bi-clock-history display-1 text-warning mb-3"></i>
+          <h4 class="text-muted">This Poll Has Expired</h4>
+          <p class="text-muted mb-4">Voting is no longer available for this poll.</p>
+          {% if session.is_admin %}
+            <a class="btn btn-success btn-lg" href="{{ url_for('admin_results', poll_id=poll.id) }}">
+              <i class="bi bi-bar-chart me-2"></i>View Results
+            </a>
+          {% else %}
+            <a class="btn btn-primary" href="{{ url_for('index') }}">
+              <i class="bi bi-arrow-left me-2"></i>Back to Polls
+            </a>
+          {% endif %}
+        </div>
+      </div>
+      
+    {% elif not poll.active %}
+      <div class="card poll-card">
+        <div class="card-body text-center py-5">
+          <i class="bi bi-pause-circle display-1 text-secondary mb-3"></i>
+          <h4 class="text-muted">This Poll Is Inactive</h4>
+          <p class="text-muted mb-4">Voting is currently disabled for this poll.</p>
+          {% if session.is_admin %}
+            <a class="btn btn-success btn-lg" href="{{ url_for('admin_results', poll_id=poll.id) }}">
+              <i class="bi bi-bar-chart me-2"></i>View Results
+            </a>
+          {% else %}
+            <a class="btn btn-primary" href="{{ url_for('index') }}">
+              <i class="bi bi-arrow-left me-2"></i>Back to Polls
+            </a>
+          {% endif %}
+        </div>
+      </div>
+      
+    {% elif already_voted %}
+      <div class="card poll-card">
+        <div class="card-body text-center py-5">
+          <i class="bi bi-check-circle display-1 text-success mb-3"></i>
+          <h4 class="text-success">Thank You for Voting!</h4>
+          <p class="text-muted mb-4">You have already cast your vote for this poll.</p>
+          {% if session.is_admin %}
+            <a class="btn btn-success btn-lg" href="{{ url_for('admin_results', poll_id=poll.id) }}">
+              <i class="bi bi-bar-chart me-2"></i>View Results
+            </a>
+          {% else %}
+            <div class="d-flex gap-2 justify-content-center">
+              <a class="btn btn-outline-primary" href="{{ url_for('my_votes') }}">
+                <i class="bi bi-list-check me-2"></i>My Votes
+              </a>
+              <a class="btn btn-primary" href="{{ url_for('index') }}">
+                <i class="bi bi-arrow-left me-2"></i>Back to Polls
+              </a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      
+    {% else %}
+      <!-- Voting Form -->
+      <div class="card poll-card">
+        <div class="card-body">
+          <h5 class="card-title text-center mb-4">
+            <i class="bi bi-cursor-fill me-2"></i>
+            Cast Your Vote
+          </h5>
+          
+          <form method="post" id="voteForm">
+            <div class="mb-4">
+              {% for opt in poll.options %}
+                <div class="poll-option mb-3" onclick="selectOption('{{ opt.id }}')">
+
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="option" id="opt{{ opt.id }}" value="{{ opt.id }}" required>
+                    <label class="form-check-label w-100" for="opt{{ opt.id }}">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-medium">{{ opt.text }}</span>
+                        <i class="bi bi-circle text-muted"></i>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+            
+            <div class="text-center">
+              <button class="btn btn-primary btn-lg px-5" type="submit">
+                <i class="bi bi-check-circle me-2"></i>
+                Submit Vote
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    {% endif %}
+    
+    <!-- Back Button -->
+    <div class="text-center mt-4">
+      <a class="btn btn-outline-secondary" href="{{ url_for('index') }}">
+        <i class="bi bi-arrow-left me-2"></i>Back to All Polls
+      </a>
+    </div>
+  </div>
+</div>
+
+{% block extra_js %}
+<script>
+function selectOption(optionId) {
+  // Remove selected class from all options
+  document.querySelectorAll('.poll-option').forEach(option => {
+    option.classList.remove('selected');
+    const icon = option.querySelector('i');
+    icon.className = 'bi bi-circle text-muted';
+  });
+  
+  // Add selected class to clicked option
+  const selectedOption = document.querySelector(`#opt${optionId}`).closest('.poll-option');
+  selectedOption.classList.add('selected');
+  const selectedIcon = selectedOption.querySelector('i');
+  selectedIcon.className = 'bi bi-check-circle-fill text-primary';
+  
+  // Check the radio button
+  document.querySelector(`#opt${optionId}`).checked = true;
+}
+
+// Handle form submission
+document.getElementById('voteForm')?.addEventListener('submit', function(e) {
+  const submitBtn = this.querySelector('button[type="submit"]');
+  submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+  submitBtn.disabled = true;
+});
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% block title %}Create New Poll - Poll System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <!-- Header -->
+    <div class="dashboard-card text-center mb-4">
+      <h1 class="display-6 mb-2">
+        <i class="bi bi-plus-circle text-primary me-2"></i>
+        Create New Poll
+      </h1>
+      <p class="text-muted mb-0">Design your poll with custom options and settings</p>
+    </div>
+
+    <!-- Create Poll Form -->
+    <div class="card poll-card">
+      <div class="card-body">
+        <form method="post" id="createPollForm">
+          <!-- Poll Question -->
+          <div class="mb-4">
+            <label class="form-label fs-5 fw-semibold">
+              <i class="bi bi-question-circle me-2"></i>
+              Poll Question
+            </label>
+            <input name="question" class="form-control form-control-lg" 
+                   placeholder="What would you like to ask?" 
+                   required
+                   maxlength="200">
+            <div class="form-text">Make your question clear and engaging (max 200 characters)</div>
+          </div>
+
+          <!-- Poll Options -->
+          <div class="mb-4">
+            <label class="form-label fs-5 fw-semibold">
+              <i class="bi bi-list-ul me-2"></i>
+              Poll Options
+            </label>
+            
+            <div id="options" class="mb-3">
+              <div class="input-group mb-2">
+                <span class="input-group-text">
+                  <i class="bi bi-1-circle"></i>
+                </span>
+                <input name="options" class="form-control" placeholder="First option" required maxlength="100">
+              </div>
+              
+              <div class="input-group mb-2">
+                <span class="input-group-text">
+                  <i class="bi bi-2-circle"></i>
+                </span>
+                <input name="options" class="form-control" placeholder="Second option" required maxlength="100">
+              </div>
+            </div>
+            
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-outline-primary" onclick="addOption()">
+                <i class="bi bi-plus-circle me-1"></i>Add Option
+              </button>
+              <button type="button" class="btn btn-outline-danger" onclick="removeOption()" id="removeBtn" style="display: none;">
+                <i class="bi bi-dash-circle me-1"></i>Remove Option
+              </button>
+            </div>
+            <div class="form-text">Add 2-10 options for your poll (max 100 characters each)</div>
+          </div>
+
+          <!-- Poll Settings -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">
+                <i class="bi bi-calendar-event me-2"></i>
+                Expiry Date (Optional)
+              </label>
+              <input name="expiry" type="datetime-local" class="form-control"
+                     min="{{ (moment() + timedelta(hours=1)).strftime('%Y-%m-%dT%H:%M') if moment else '' }}">
+              <div class="form-text">Leave empty for no expiration</div>
+            </div>
+            
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">
+                <i class="bi bi-gear me-2"></i>
+                Poll Status
+              </label>
+              <div class="form-check form-switch mt-2">
+                <input type="checkbox" name="active" class="form-check-input" id="activeCheck" checked>
+                <label class="form-check-label" for="activeCheck">
+                  <span class="fw-medium">Active Poll</span>
+                  <div class="form-text mb-0">Users can vote immediately when active</div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Form Actions -->
+          <div class="d-flex gap-3 justify-content-center">
+            <a class="btn btn-outline-secondary btn-lg" href="{{ url_for('admin_dashboard') }}">
+              <i class="bi bi-arrow-left me-2"></i>Cancel
+            </a>
+            <button class="btn btn-primary btn-lg px-4" type="submit">
+              <i class="bi bi-check-circle me-2"></i>Create Poll
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Tips Card -->
+    <div class="card mt-4" style="background: linear-gradient(135deg, #e0f2fe, #f3e5f5);">
+      <div class="card-body">
+        <h6 class="card-title">
+          <i class="bi bi-lightbulb text-warning me-2"></i>
+          Tips for Great Polls
+        </h6>
+        <ul class="list-unstyled mb-0">
+          <li class="mb-1"><i class="bi bi-check text-success me-2"></i>Keep questions clear and unbiased</li>
+          <li class="mb-1"><i class="bi bi-check text-success me-2"></i>Provide balanced and comprehensive options</li>
+          <li class="mb-1"><i class="bi bi-check text-success me-2"></i>Consider adding an "Other" option when appropriate</li>
+          <li><i class="bi bi-check text-success me-2"></i>Set reasonable expiry dates for time-sensitive polls</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% block extra_js %}
+<script>
+let optionCount = 2;
+const maxOptions = 10;
+const icons = ['1-circle', '2-circle', '3-circle', '4-circle', '5-circle', '6-circle', '7-circle', '8-circle', '9-circle', '0-circle-fill'];
+
+function addOption() {
+  if (optionCount >= maxOptions) {
+    alert('Maximum 10 options allowed');
+    return;
+  }
+  
+  optionCount++;
+  const container = document.getElementById('options');
+  const div = document.createElement('div');
+  div.className = 'input-group mb-2 slide-in';
+  div.innerHTML = `
+    <span class="input-group-text">
+      <i class="bi bi-${icons[Math.min(optionCount - 1, icons.length - 1)]}"></i>
+    </span>
+    <input name="options" class="form-control" placeholder="Option ${optionCount}" required maxlength="100">
+  `;
+  
+  container.appendChild(div);
+  
+  // Show/hide remove button
+  document.getElementById('removeBtn').style.display = optionCount > 2 ? 'block' : 'none';
+  
+  // Focus new input
+  div.querySelector('input').focus();
+}
+
+function removeOption() {
+  if (optionCount <= 2) return;
+  
+  const container = document.getElementById('options');
+  const lastOption = container.lastElementChild;
+  lastOption.remove();
+  
+  optionCount--;
+  document.getElementById('removeBtn').style.display = optionCount > 2 ? 'block' : 'none';
+}
+
+// Form validation and submission
+document.getElementById('createPollForm').addEventListener('submit', function(e) {
+  const question = this.querySelector('[name="question"]').value.trim();
+  const options = Array.from(this.querySelectorAll('[name="options"]')).map(input => input.value.trim());
+  
+  // Validate question
+  if (question.length < 5) {
+    e.preventDefault();
+    alert('Question must be at least 5 characters long');
+    return;
+  }
+  
+  // Validate options
+  const validOptions = options.filter(option => option.length > 0);
+  if (validOptions.length < 2) {
+    e.preventDefault();
+    alert('Please provide at least 2 options');
+    return;
+  }
+  
+  // Check for duplicate options
+  const uniqueOptions = [...new Set(validOptions.map(opt => opt.toLowerCase()))];
+  if (uniqueOptions.length !== validOptions.length) {
+    e.preventDefault();
+    alert('Please ensure all options are unique');
+    return;
+  }
+  
+  // Show loading state
+  const submitBtn = this.querySelector('button[type="submit"]');
+  submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating Poll...';
+  submitBtn.disabled = true;
+});
+
+// Real-time character counter for question
+document.querySelector('[name="question"]').addEventListener('input', function() {
+  const maxLength = 200;
+  const currentLength = this.value.length;
+  const remaining = maxLength - currentLength;
+  
+  let helpText = this.nextElementSibling;
+  if (remaining < 50) {
+    helpText.innerHTML = `Make your question clear and engaging (${remaining} characters remaining)`;
+    helpText.className = remaining < 20 ? 'form-text text-warning' : 'form-text text-info';
+  } else {
+    helpText.innerHTML = 'Make your question clear and engaging (max 200 characters)';
+    helpText.className = 'form-text';
+  }
+});
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block title %}Poll Results: {{ poll.question }} - Poll System{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <!-- Header -->
+    <div class="dashboard-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div class="flex-grow-1">
+          <h1 class="display-6 mb-2">
+            <i class="bi bi-bar-chart-fill text-primary me-2"></i>
+            Poll Results
+          </h1>
+          <h3 class="text-muted fw-normal">{{ poll.question }}</h3>
+        </div>
+        <a class="btn btn-outline-secondary" href="{{ url_for('admin_dashboard') }}">
+          <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+        </a>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <!-- Results Summary -->
+      <div class="col-lg-4">
+        <div class="card h-100">
+          <div class="card-header">
+            <h5 class="card-title mb-0">
+              <i class="bi bi-list-ol me-2"></i>Results Summary
+            </h5>
+          </div>
+          <div class="card-body">
+            {% set total_votes = data|sum %}
+            <div class="mb-3">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted">Total Votes</span>
+                <span class="fs-4 fw-bold text-primary">{{ total_votes }}</span>
+              </div>
+            </div>
+            
+            <hr>
+            
+            <div class="space-y-3">
+              {% set colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'] %}
+              {% for i in range(labels|length) %}
+                {% set bar_color = colors[i % colors|length] %}
+                <div class="mb-3">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="fw-medium">{{ labels[i] }}</span>
+                    <span class="fw-bold">{{ data[i] }} votes</span>
+                  </div>
+                  <div class="progress" style="height: 8px;">
+                    <div class="progress-bar" 
+                         style="width: {{ percentages[i] }}%; background-color: {{ bar_color }};">
+                    </div>
+                  </div>
+                  <div class="text-end">
+                    <small class="text-muted">{{ '%.1f'|format(percentages[i]) }}%</small>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Chart -->
+      <div class="col-lg-8">
+        <div class="card h-100">
+          <div class="card-header">
+            <h5 class="card-title mb-0">
+              <i class="bi bi-graph-up me-2"></i>Visual Results
+            </h5>
+          </div>
+          <div class="card-body">
+            <div style="position: relative; height: 400px; width: 100%;">
+              <canvas id="pollChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Export Options -->
+    <div class="card mt-4">
+      <div class="card-body">
+        <h6 class="card-title">
+          <i class="bi bi-download me-2"></i>Export Options
+        </h6>
+        <div class="d-flex gap-2">
+          <a class="btn btn-outline-success" href="{{ url_for('export_poll_csv', poll_id=poll.id) }}">
+            <i class="bi bi-file-earmark-spreadsheet me-2"></i>Download CSV
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JSON Payload -->
+<script id="chart-payload" type="application/json">
+{{ payload_json|safe }}
+</script>
+
+<!-- ✅ Load Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Chart.js Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  try {
+    const payload = JSON.parse(document.getElementById('chart-payload').textContent || '{}');
+    const labels = payload.labels || [];
+    const data = payload.data || [];
+    
+    if (labels.length === 0 || data.length === 0) {
+      document.getElementById('pollChart').closest('.card-body').innerHTML = 
+        '<div class="text-center py-5"><i class="bi bi-bar-chart display-1 text-muted"></i><p class="text-muted">No votes to display</p></div>';
+      return;
+    }
+    
+    const ctx = document.getElementById('pollChart').getContext('2d');
+    
+    const colors = [
+      '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', 
+      '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
+    ];
+    const bg = data.map((_, i) => colors[i % colors.length]);
+    
+    if (window.pollChart && typeof window.pollChart.destroy === 'function') {
+      window.pollChart.destroy();
+    }
+    
+    window.pollChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Votes',
+          data: data,
+          backgroundColor: bg,
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              precision: 0
+            }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `${context.raw} votes`;
+              }
+            }
+          }
+        }
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error creating chart:', error);
+    document.getElementById('pollChart').closest('.card-body').innerHTML = 
+      '<div class="text-center py-5"><i class="bi bi-exclamation-triangle display-1 text-warning"></i><p class="text-muted">Error loading chart</p></div>';
+  }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,64 @@
+
+<!-- Enhanced Register Page -->
+<!-- register.html -->
+{% extends "base.html" %}
+{% block title %}Register - Poll System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6 col-lg-5">
+    <!-- Header -->
+    <div class="text-center mb-4">
+      <div class="mb-3">
+        <i class="bi bi-person-plus display-1 text-success"></i>
+      </div>
+      <h2 class="fw-bold">Join Poll System</h2>
+      <p class="text-muted">Create your account to start participating in polls</p>
+    </div>
+
+    <!-- Register Form -->
+    <div class="card poll-card">
+      <div class="card-body p-4">
+        <form method="post" id="registerForm">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">
+              <i class="bi bi-person me-2"></i>Username
+            </label>
+            <input name="username" class="form-control form-control-lg" 
+                   placeholder="Choose a username" required minlength="3">
+            <div class="form-text">Username must be at least 3 characters long</div>
+          </div>
+          
+          <div class="mb-4">
+            <label class="form-label fw-semibold">
+              <i class="bi bi-lock me-2"></i>Password
+            </label>
+            <input name="password" type="password" class="form-control form-control-lg" 
+                   placeholder="Choose a secure password" required minlength="6">
+            <div class="form-text">Password must be at least 6 characters long</div>
+          </div>
+          
+          <button class="btn btn-success btn-lg w-100 mb-3">
+            <i class="bi bi-person-check me-2"></i>Create Account
+          </button>
+        </form>
+        
+        <div class="text-center">
+          <p class="text-muted mb-2">Already have an account?</p>
+          <a class="btn btn-outline-primary" href="{{ url_for('login') }}">
+            <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('registerForm').addEventListener('submit', function() {
+  const submitBtn = this.querySelector('button[type="submit"]');
+  submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating Account...';
+  submitBtn.disabled = true;
+});
+</script>
+{% endblock %}

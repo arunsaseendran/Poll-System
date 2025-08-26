@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<h3>My Votes</h3>
+
+{% if votes %}
+  <ul class="list-group">
+    {% for v in votes %}
+      <li class="list-group-item">
+        <strong>{{ v.poll_question }}</strong><br>
+        Voted: {{ v.option_text }} <span class="text-muted">at {{ v.voted_at.strftime('%Y-%m-%d %H:%M') }}</span>
+        {% if session.is_admin %}
+          <a class="btn btn-sm btn-link" href="{{ url_for('admin_results', poll_id=v.poll_id) }}">Results</a>
+        {% else %}
+          <a class="btn btn-sm btn-link" href="{{ url_for('index') }}">Back to Polls</a>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <div class="alert alert-info">You haven't voted yet.</div>
+{% endif %}
+{% endblock %}
